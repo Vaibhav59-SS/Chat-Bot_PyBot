@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyBot</title>
+<link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1e1e2e;
+    --panel: #181825;
+    --text: #cdd6f4;
+    --muted: #6c7086;
+    --py-blue: #4B8BBE;
+    --py-yellow: #FFD43B;
+    --prompt: #a6e3a1;
+    --error: #f38ba8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(75, 139, 190, 0.10), transparent 35%),
+      radial-gradient(circle at 85% 90%, rgba(255, 212, 59, 0.08), transparent 35%);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .terminal {
+    width: 100%;
+    max-width: 720px;
+    background: var(--panel);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #11111b;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.red { background: #f38ba8; }
+  .dot.yellow { background: #FFD43B; }
+  .dot.green { background: #a6e3a1; }
+
+  .titlebar .name {
+    margin-left: 10px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+  }
+
+  .titlebar .name b { color: var(--py-yellow); }
+
+  .header {
+    padding: 18px 20px 8px;
+  }
+
+  .header .logo {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .header .logo .py { color: var(--py-blue); }
+  .header .logo .bot { color: var(--py-yellow); }
+
+  .header .sub {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .header .sub::before { content: "# "; color: var(--muted); }
+
+  #chat {
+    height: 420px;
+    overflow-y: auto;
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  #chat::-webkit-scrollbar { width: 8px; }
+  #chat::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.08);
+    border-radius: 4px;
+  }
+
+  .line {
+    display: flex;
+    gap: 8px;
+    font-size: 14px;
+    line-height: 1.6;
+    animation: fadeIn 0.2s ease-out;
+    word-wrap: break-word;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .line .prompt {
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+
+  .line.user .prompt { color: var(--prompt); }
+  .line.user .content { color: var(--text); }
+
+  .line.bot .prompt { color: var(--py-blue); }
+  .line.bot .content { color: var(--text); }
+
+  .line.bot.error .content { color: var(--error); }
+
+  .line .content { white-space: pre-wrap; }
+
+  .typing {
+    display: inline-flex;
+    gap: 3px;
+  }
+  .typing span {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--py-blue);
+    animation: blink 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+  form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: #11111b;
+  }
+
+  form .prompt-symbol {
+    color: var(--prompt);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  #msg {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    caret-color: var(--py-yellow);
+  }
+
+  #msg::placeholder { color: var(--muted); }
+
+  button {
+    background: var(--py-blue);
+    color: #11111b;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  button:hover { background: var(--py-yellow); }
+  button:active { transform: scale(0.97); }
+
+  @media (max-width: 480px) {
+    #chat { height: 60vh; }
+    .header .logo { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal">
+  <div class="titlebar">
+    <span class="dot red"></span>
+    <span class="dot yellow"></span>
+    <span class="dot green"></span>
+    <span class="name">pybot &mdash; <b>python3 bot.py</b></span>
+  </div>
+
+  <div class="header">
+    <div class="logo"><span class="py">Py</span><span class="bot">Bot</span></div>
+    <div class="sub">retrieval-based NLP chatbot for python questions</div>
+  </div>
+
+  <div id="chat">
+    <div class="line bot">
+      <span class="prompt">&gt;&gt;&gt;</span>
+      <span class="content">Hi, I'm PyBot. Ask me about Python &mdash; e.g. "what is a tuple" or "what is the pickle module". Type "bye" to end.</span>
+    </div>
+  </div>
+
+  <form id="chat-form" autocomplete="off">
+    <span class="prompt-symbol">&gt;&gt;&gt;</span>
+    <input type="text" id="msg" name="msg" placeholder="ask something..." autofocus>
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+  const chat = document.getElementById('chat');
+  const form = document.getElementById('chat-form');
+  const input = document.getElementById('msg');
+
+  function addLine(role, text) {
+    const line = document.createElement('div');
+    line.className = 'line ' + role;
+    if (role === 'bot' && text.toLowerCase().startsWith("i am sorry")) {
+      line.classList.add('error');
+    }
+
+    const prompt = document.createElement('span');
+    prompt.className = 'prompt';
+    prompt.textContent = role === 'user' ? '>>>' : '#';
+
+    const content = document.createElement('span');
+    content.className = 'content';
+    content.textContent = text;
+
+    line.appendChild(prompt);
+    line.appendChild(content);
+    chat.appendChild(line);
+    chat.scrollTop = chat.scrollHeight;
+    return line;
+  }
+
+  function addTyping() {
+    const line = document.createElement('div');
+    line.className = 'line bot';
+    line.id = 'typing-indicator';
+
+    const prompt = document.createElement('span');
+    prompt.className = 'prompt';
+    prompt.textContent = '#';
+
+    const content = document.createElement('span');
+    content.className = 'content typing';
+    content.innerHTML = '<span></span><span></span><span></span>';
+
+    line.appendChild(prompt);
+    line.appendChild(content);
+    chat.appendChild(line);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function removeTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+
+    addLine('user', text);
+    input.value = '';
+    addTyping();
+
+    try {
+      const res = await fetch('/get', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'msg=' + encodeURIComponent(text)
+      });
+      const data = await res.json();
+      removeTyping();
+      addLine('bot', data.response);
+    } catch (err) {
+      removeTyping();
+      addLine('bot', 'Connection error — is the Flask server running?');
+    }
+  });
+</script>
+
+</body>
+</html>
