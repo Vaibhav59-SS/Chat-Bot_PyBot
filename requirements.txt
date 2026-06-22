@@ -1,7 +1,0 @@
-nltk
-scikit-learn
-numpy
-pyttsx3
-flask
-google-generativeai
-google api key = $env:GEMINI_API_KEY="AQ.Ab8RN6KlefoOo4ZmbWex2JmLcVoHCl4ZYqK9oMNbRvqCFDlpqg"  
